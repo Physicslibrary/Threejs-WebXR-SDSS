@@ -1,0 +1,407 @@
+<!--
+
+threejs-webxr-sdss.html
+
+https://github.com/Physicslibrary/Threejs-WebXR-SDSS
+
+MIT License
+
+Copyright (c) 2024 Hartwell Fong
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+January 2024.
+
+Explore Sloan Digital Sky Survey with Threejs WebXR.
+
+System requirements
+2019 Oculus Quest tested
+Meta Quest Browser (three.js r160)
+
+Credits
+
+threejs-webxr-sdss.html uses datasets gal_mpajhu.ply and gal_mpajhu.txt
+from:
+
+https://github.com/xiaohanzai/VizlabSDSSTour
+
+Datasets gal_mpajhu.ply and gal_mpajhu.txt were generated from SDSS public server:
+
+https://skyserver.sdss.org
+
+ThreeJS is used for WebXR:
+
+https://threejs.org/
+
+
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+	
+	<head>
+		<meta charset="utf-8">
+		<title>three.js vr SDSS</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>		
+	</head>
+	<body>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { createText } from './jsm/webxr/Text2D.js';
+
+			import { VRButton } from 'three/addons/webxr/VRButton.js';
+			import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+			import { OculusHandModel } from 'three/addons/webxr/OculusHandModel.js';
+
+			let camera, scene, raycaster, renderer;
+			let controller1, controller2;
+			let controllerGrip1, controllerGrip2;
+
+			let room, marker, floor, baseReferenceSpace;
+
+			let INTERSECTION;
+			const tempMatrix = new THREE.Matrix4();
+
+			let object, material, loader, controls;
+			
+			let array = [];
+			let text;
+			let box;
+			let hand1,hand2;
+			let wrist_text;
+
+				var loader2 = new THREE.FileLoader();
+
+				loader2.load('./models/gal_mpajhu.txt',
+
+				// onLoad callback
+				function ( data ) {		
+					array = data.split('\n');
+					
+					console.log(array[0]);
+
+					init();
+					animate();
+				},
+
+				// onProgress callback
+				function ( xhr ) {
+					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+				},
+
+				// onError callback
+				function ( err ) {
+					console.error( 'Error reading gal_mpajhu.txt' );
+				}
+			);
+
+			function init() {
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x000000 );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
+				camera.position.set( 0, 2.5, 2.5 );
+
+				room = new THREE.LineSegments(
+					new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
+					new THREE.LineBasicMaterial( { color: 0xbcbcbc } )
+				);
+				scene.add( room );
+
+				scene.add( new THREE.HemisphereLight( 0xa5a5a5, 0x898989, 3 ) );
+
+				const light = new THREE.DirectionalLight( 0xffffff, 3 );
+				light.position.set( 1, 1, 1 ).normalize();
+				scene.add( light );
+
+				marker = new THREE.Mesh(
+					new THREE.CircleGeometry( 0.25, 32 ).rotateX( - Math.PI / 2 ),
+					new THREE.MeshBasicMaterial( { color: 0xbcbcbc } )
+				);
+				scene.add( marker );
+
+				floor = new THREE.Mesh(
+					new THREE.PlaneGeometry( 4.8, 4.8, 2, 2 ).rotateX( - Math.PI / 2 ),
+					new THREE.MeshBasicMaterial( { color: 0xbcbcbc, transparent: true, opacity: 0.25 } )
+				);
+				scene.add( floor );
+
+				text = createText('Threejs SDSS WebXR', 0.05);
+				text.position.set( 1.0, 1.5, -1 );
+				scene.add( text );
+				text = createText('Pinch index-thumb to display wrist position(x y z)', 0.05);
+				text.position.set( 1.0, 1.4, -1 );
+				scene.add( text );
+				text = createText('Look at left palm, pinch index-thumb to exit VR', 0.05);
+				text.position.set( 1.0, 1.3, -1 );
+				scene.add( text );
+
+				loader = new PLYLoader();
+				loader.load( './models/gal_mpajhu.ply', function ( geometry ) {
+				material = new THREE.PointsMaterial( { size: 0.01, vertexColors: true } );
+				object = new THREE.Points( geometry, material );
+				object.position.set( 0.0, 1.5, -1.8 );
+				object.scale.set( 1.0, 1.0, 1.0 );
+				scene.add( object );
+				})
+
+				raycaster = new THREE.Raycaster();
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				renderer.xr.addEventListener( 'sessionstart', () => baseReferenceSpace = renderer.xr.getReferenceSpace() );
+				renderer.xr.enabled = true;
+				renderer.xr.setFoveation(0);
+
+				document.body.appendChild( renderer.domElement );
+				document.body.appendChild( VRButton.createButton( renderer ) );
+
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.target.set(0,0,0);
+				controls.update();
+				
+				// controllers
+
+				function onSelectStart() {
+
+					this.userData.isSelecting = true;
+
+				}
+
+				function onSelectEnd() {
+
+					this.userData.isSelecting = false;
+
+					if ( INTERSECTION ) {
+
+						const offsetPosition = { x: - INTERSECTION.x, y: - INTERSECTION.y, z: - INTERSECTION.z, w: 1 };
+						const offsetRotation = new THREE.Quaternion();
+						const transform = new XRRigidTransform( offsetPosition, offsetRotation );
+						const teleportSpaceOffset = baseReferenceSpace.getOffsetReferenceSpace( transform );
+
+						renderer.xr.setReferenceSpace( teleportSpaceOffset );
+
+					}
+
+				}
+
+				controller1 = renderer.xr.getController( 0 );
+				controller1.addEventListener( 'selectstart', onSelectStart );
+				controller1.addEventListener( 'selectend', onSelectEnd );
+				
+				controller1.addEventListener( 'connected', function ( event ) {
+
+					this.add( buildController( event.data ) );
+
+				} );
+				controller1.addEventListener( 'disconnected', function () {
+
+					this.remove( this.children[ 0 ] );
+
+				} );
+				
+				scene.add( controller1 );
+
+				controller2 = renderer.xr.getController( 1 );
+				controller2.addEventListener( 'selectstart', onSelectStart );
+				controller2.addEventListener( 'selectend', onSelectEnd );
+				
+				controller2.addEventListener( 'connected', function ( event ) {
+
+					this.add( buildController( event.data ) );
+
+				} );
+				controller2.addEventListener( 'disconnected', function () {
+
+					this.remove( this.children[ 0 ] );
+
+				} );
+				
+				scene.add( controller2 );
+
+				// The XRControllerModelFactory will automatically fetch controller models
+				// that match what the user is holding as closely as possible. The models
+				// should be attached to the object returned from getControllerGrip in
+				// order to match the orientation of the held device.
+
+				const controllerModelFactory = new XRControllerModelFactory();
+
+				controllerGrip1 = renderer.xr.getControllerGrip( 0 );
+				controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
+				scene.add( controllerGrip1 );
+				
+				hand1 = renderer.xr.getHand( 0 );
+				const handModel1 = new OculusHandModel( hand1 );
+				hand1.add( handModel1 );
+				scene.add( hand1 );
+
+				controllerGrip2 = renderer.xr.getControllerGrip( 1 );
+				controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
+				scene.add( controllerGrip2 );
+
+				hand2 = renderer.xr.getHand( 1 );
+				const handModel2 = new OculusHandModel( hand2 );
+				hand2.add( handModel2 );
+				scene.add( hand2 );
+	
+				hand1.addEventListener( 'pinchstart', () => {
+
+				let wristX = hand1.joints['wrist'].position.x;
+				let wristY = hand1.joints['wrist'].position.y+0.2;
+				let wristZ = hand1.joints['wrist'].position.z-0.1;
+				wristX = wristX.toFixed(2);
+				wristY = wristY.toFixed(2);
+				wristZ = wristZ.toFixed(2);
+				wrist_text = createText(wristX.toString() + "  " + wristY.toString() + "  " + wristZ.toString(),0.05);
+				wrist_text.position.set(wristX,wristY,wristZ);
+				scene.add(wrist_text);
+				
+				});
+
+				
+				hand1.addEventListener( 'pinchend', () => {
+
+					scene.remove(wrist_text);
+
+				} );
+				
+
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function buildController( data ) {
+
+				let geometry, material, box2;
+	
+				box2 = new THREE.LineSegments(
+					new BoxLineGeometry( 0.1, 0.1, 0.1, 1, 1, 1 ).translate( 0, 0, 0 ),
+					new THREE.LineBasicMaterial( { color: 0x00ff00 } )
+				);
+				return box2;
+
+				switch ( data.targetRayMode ) {
+
+					case 'tracked-pointer':
+
+						geometry = new THREE.BufferGeometry();
+						geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+						geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+
+						material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+
+						return new THREE.Line( geometry, material );
+
+					case 'gaze':
+
+						geometry = new THREE.RingGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+						material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
+						return new THREE.Mesh( geometry, material );
+
+				}
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				renderer.setAnimationLoop( render );
+
+			}
+
+			function render() {
+
+				INTERSECTION = undefined;
+
+				if ( controller1.userData.isSelecting === true ) {
+
+					tempMatrix.identity().extractRotation( controller1.matrixWorld );
+
+					raycaster.ray.origin.setFromMatrixPosition( controller1.matrixWorld );
+					raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
+
+					const intersects = raycaster.intersectObjects( [ floor ] );
+
+					if ( intersects.length > 0 ) {
+
+						INTERSECTION = intersects[ 0 ].point;
+
+					}
+
+				} else if ( controller2.userData.isSelecting === true ) {
+
+					tempMatrix.identity().extractRotation( controller2.matrixWorld );
+
+					raycaster.ray.origin.setFromMatrixPosition( controller2.matrixWorld );
+					raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
+
+					const intersects = raycaster.intersectObjects( [ floor ] );
+
+					if ( intersects.length > 0 ) {
+
+						INTERSECTION = intersects[ 0 ].point;
+
+					}
+
+				}
+
+				if ( INTERSECTION ) marker.position.copy( INTERSECTION );
+
+				marker.visible = INTERSECTION !== undefined;
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
+</html>
