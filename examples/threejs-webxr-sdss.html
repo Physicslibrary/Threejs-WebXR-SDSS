@@ -164,14 +164,17 @@ https://threejs.org/
 				);
 				scene.add( floor );
 
-				text = createText('Threejs SDSS WebXR', 0.05);
+				text = createText('Threejs SDSS WebXR', 0.08);
 				text.position.set( 1.0, 1.5, -1 );
 				scene.add( text );
-				text = createText('Pinch index-thumb to display wrist position(x y z)', 0.05);
+				text = createText('To teleport, point palm at floor and pinch index-thumb', 0.05);
 				text.position.set( 1.0, 1.4, -1 );
 				scene.add( text );
-				text = createText('Look at left palm, pinch index-thumb to exit VR', 0.05);
+				text = createText('To display wrist position(x y z), pinch index-thumb', 0.05);
 				text.position.set( 1.0, 1.3, -1 );
+				scene.add( text );
+				text = createText('To exit VR, look at left palm and pinch index-thumb', 0.05);
+				text.position.set( 1.0, 1.2, -1 );
 				scene.add( text );
 
 				loader = new PLYLoader();
