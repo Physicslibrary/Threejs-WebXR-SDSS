@@ -9,13 +9,19 @@ https://github.com/Physicslibrary/Threejs-WebXR-SDSS/assets/47191469/4f85c1e4-38
 
 2019 Oculus Quest tested<br>
 
-Meta Quest Browser (three.js r160)<br>
+Meta Quest Browser (uses a minimal subset of three.js r160)<br>
+
+File threejs-webxr-sdss.html developed and tested on Raspberry Pi 4 and Raspberry Pi OS (2023)<br>
 
 # Installation
 
-No installation. In a Meta Quest Browser and go to link:<br>
+No installation. In a Meta Quest Browser and "Enter VR" in the link below:<br>
 
 https://physicslibrary.github.io/Threejs-WebXR-SDSS/examples/threejs-webxr-sdss.html
+
+To teleport, point palm at floor and pinch index-thumb.<br>
+To display wrist position(x y z), pinch index-thumb.<br>
+To exit VR, look at left palm, pinch index-thumb.<br>
 
 # Credits
 
