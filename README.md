@@ -11,6 +11,12 @@ https://github.com/Physicslibrary/Threejs-WebXR-SDSS/assets/47191469/4f85c1e4-38
 
 Meta Quest Browser (three.js r160)<br>
 
+# Installation
+
+No installation. In a Meta Quest Browser and go to link:<br>
+
+https://physicslibrary.github.io/Threejs-WebXR-SDSS/examples/threejs-webxr-sdss.html
+
 # Credits
 
 Datasets gal_mpajhu.ply and gal_mpajhu.txt were generated from SDSS public server:<br>
