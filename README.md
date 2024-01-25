@@ -12,7 +12,7 @@ https://github.com/Physicslibrary/Threejs-WebXR-SDSS/assets/47191469/4f85c1e4-38
 
 Meta Quest Browser (uses a minimal subset of three.js r160)<br>
 
-File threejs-webxr-sdss.html developed and tested on Raspberry Pi 4 and Raspberry Pi OS (2023)<br>
+File threejs-webxr-sdss.html was prototyped on a Raspberry Pi 4 with Raspberry Pi OS (2023)<br>
 
 # Installation
 
